@@ -1,0 +1,29 @@
+name: p3-입력값
+on:
+  push:
+    paths:
+      - .github/workflows/p3.yml
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 대상 환경
+        type: string
+        default: dev
+      mode:
+        description: 실행 방식
+        type: choice
+        options:
+          - plan
+          - apply
+        default: plan
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 입력값 확인
+        run: |
+          echo "target=${{ inputs.target }}"
+          echo "mode=${{ inputs.mode }}"
+      - name: 적용 안내
+        if: inputs.mode == 'apply'
+        run: echo "실제 적용"

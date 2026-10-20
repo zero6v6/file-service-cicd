@@ -1,0 +1,69 @@
+# 문법 연습 ① — 이벤트 · 입력값 · 컨텍스트 · 환경 변수 · 러너
+name: 01-basics
+
+on:
+  # 이 파일을 고친 push 에만 돎 (다른 파일을 고친 push 에는 돌지 않음)
+  push:
+    paths: ['.github/workflows/01-basics.yml']
+  # Actions 탭의 Run workflow 버튼 — 입력값을 받음
+  workflow_dispatch:
+    inputs:
+      greeting:
+        description: 인사말
+        type: string
+        default: 안녕
+      level:
+        description: 로그 수준
+        type: choice
+        options: [info, debug]
+        default: info
+
+# 워크플로 전체에서 쓰는 환경 변수
+env:
+  COURSE: Devops CI/CD
+
+jobs:
+  basics:
+    runs-on: ubuntu-24.04
+    # 이 잡에서만 쓰는 환경 변수
+    env:
+      JOB_NAME: basics
+    steps:
+      - name: 1 컨텍스트 — 누가 · 무엇으로 · 어디서
+        run: |
+          echo "actor  = ${{ github.actor }}"
+          echo "event  = ${{ github.event_name }}"
+          echo "ref    = ${{ github.ref_name }}"
+          echo "sha    = ${{ github.sha }}"
+          echo "runner = ${{ runner.os }} / ${{ runner.arch }}"
+
+      - name: 2 입력값 — 버튼으로 시작했을 때만 값이 있음
+        run: echo "greeting=${{ inputs.greeting }} level=${{ inputs.level }}"
+
+      - name: 3 환경 변수 세 단계 + 기본 환경 변수
+        env:
+          STEP_NOTE: 이 스텝에서만
+        run: |
+          echo "$COURSE · $JOB_NAME · $STEP_NOTE"
+          echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY  GITHUB_SHA=${GITHUB_SHA::7}"
+
+      - name: 4 표현식 함수 · 비교
+        run: |
+          echo "${{ format('{0} 의 {1}', github.actor, github.event_name) }}"
+          echo "main 인가? ${{ github.ref == 'refs/heads/main' }}"
+          echo "버튼인가? ${{ github.event_name == 'workflow_dispatch' }}"
+
+      - name: 5 러너 둘러보기
+        run: |
+          uname -a
+          nproc && free -h
+          java -version 2>&1 | head -1
+          docker --version
+
+      - name: 6 코드가 있나 (받기 전)
+        run: ls -la
+
+      - uses: actions/checkout@v7
+
+      - name: 7 이제는 있음
+        run: ls -la

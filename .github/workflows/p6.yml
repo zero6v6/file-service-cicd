@@ -1,0 +1,26 @@
+name: p6-값넘기기
+on:
+  push:
+    paths:
+      - .github/workflows/p6.yml
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - name: 버전 만들기
+        id: ver
+        run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+  report:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 버전 출력
+        run: echo "버전 ${{ needs.build.outputs.version }}"
+      - name: 요약 남기기
+        run: |
+          echo "| 항목 | 값 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 버전 | ${{ needs.build.outputs.version }} |" >> "$GITHUB_STEP_SUMMARY"

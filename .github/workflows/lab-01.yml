@@ -1,0 +1,9 @@
+name: lab-01
+on:
+  workflow_dispatch:
+jobs:
+  hello:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 인사
+        run: echo "첫 워크플로 실행 성공"

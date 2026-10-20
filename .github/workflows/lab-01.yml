@@ -1,5 +1,8 @@
 name: lab-01
 on:
+  push:
+    paths:
+      - .github/workflows/lab-01.yml
   workflow_dispatch:
 jobs:
   hello:

@@ -1,0 +1,68 @@
+# 문법 연습 ② — 잡 순서 · 조건 · 실패 다루기 · 값 넘기기 · 실행 요약
+name: 02-flow
+
+on:
+  push:
+    paths: ['.github/workflows/02-flow.yml']
+  workflow_dispatch:
+    inputs:
+      break:
+        description: build 잡을 일부러 실패시킬까
+        type: boolean
+        default: false
+
+jobs:
+  # needs 가 없는 잡 둘(lint · build)은 동시에 시작함
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "lint — build 와 동시에 돎"
+
+  build:
+    runs-on: ubuntu-24.04
+    # 스텝 출력 → 잡 출력 (다른 잡이 읽을 수 있게)
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - id: ver
+        name: 1 스텝 출력 만들기
+        run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: 2 같은 잡의 다음 스텝에 환경 변수 넘기기
+        run: echo "BUILT_AT=$(date +%H:%M:%S)" >> "$GITHUB_ENV"
+
+      - name: 3 일부러 실패 (입력값 break 가 true 일 때만)
+        if: ${{ inputs.break }}
+        run: exit 1
+
+      - name: 4 앞이 모두 성공했을 때만 (기본 동작)
+        run: echo "version=${{ steps.ver.outputs.version }} built=$BUILT_AT"
+
+      - name: 5 앞에서 실패했을 때만
+        if: failure()
+        run: echo "실패 — 보고서 · 알림은 여기서"
+
+      - name: 6 항상 (정리)
+        if: always()
+        run: echo "성공이든 실패든 정리"
+
+      - name: 7 실패해도 잡은 계속 (경고만 남김)
+        if: always()
+        continue-on-error: true
+        run: exit 1
+
+  report:
+    # lint · build 가 모두 성공해야 시작 · build 의 출력을 받음
+    needs: [lint, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 8 앞 잡의 출력 받기 · 실행 요약 화면에 쓰기
+        run: |
+          echo "받은 버전 = ${{ needs.build.outputs.version }}"
+          {
+            echo "## 02-flow 결과"
+            echo "| 항목 | 값 |"
+            echo "| --- | --- |"
+            echo "| 버전 | ${{ needs.build.outputs.version }} |"
+            echo "| 실행 번호 | ${{ github.run_number }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

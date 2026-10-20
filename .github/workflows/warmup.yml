@@ -1,0 +1,16 @@
+name: warmup
+on:
+  push:
+    paths:
+      - .github/workflows/warmup.yml
+jobs:
+  warmup:
+    runs-on: ubuntu-24.04
+    env:
+      WHO: ubuntu
+    steps:
+      - name: 두 가지 방식
+        run: |
+          echo "$WHO"
+          echo "${{ env.WHO }}"
+          echo '$WHO'

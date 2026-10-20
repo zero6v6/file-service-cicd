@@ -1,0 +1,32 @@
+name: p5-조건실행
+on:
+  push:
+    paths:
+      - .github/workflows/p5.yml
+  workflow_dispatch:
+    inputs:
+      fail:
+        description: 일부러 실패시킬지
+        type: boolean
+        default: false
+jobs:
+  flow:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 시작
+        run: echo "시작"
+      - name: 일부러 실패
+        if: inputs.fail
+        run: exit 1
+      - name: 다음 단계
+        run: echo "다음 단계"
+      - name: 실패 알림
+        if: failure()
+        run: echo "실패 알림"
+      - name: 정리
+        if: always()
+        run: echo "정리"
+      - name: 무시되는 실패
+        if: always()
+        continue-on-error: true
+        run: exit 1

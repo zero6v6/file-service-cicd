@@ -1,0 +1,14 @@
+env:
+
+jobs:
+  basics:
+    runs-on: ubuntu-24.04
+    # 이 잡에서만 쓰는 환경 변수
+
+
+jobs:
+  basics:
+    runs-on: ubuntu-24.04
+    # 이 잡에서만 쓰는 환경 변수
+    env:
+      JOB_NAME: basics

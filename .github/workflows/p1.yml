@@ -1,0 +1,17 @@
+name: p1-컨텍스트
+on:
+  push:
+    paths:
+      - .github/workflows/p1.yml
+  workflows_dispatch:
+jobs:
+  basics:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 실행 정보
+        run: |
+          echo "사람:  ${{ github.actor }}"
+          echo "이벤트:  ${{ github.event_name }}"
+          echo "브랜치:  ${{ github.ref_name }}"
+          echo "커밋:  ${{ github.sha }}"
+          echo "러너 os:  ${{ runner.os }}

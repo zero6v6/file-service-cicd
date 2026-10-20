@@ -1,0 +1,16 @@
+# EC2 에서 file-service 컨테이너를 띄움.
+#
+#   cp .env.example .env && chmod 600 .env   (APP_S3_BUCKET 수정)
+#   docker compose up -d
+#   docker compose logs -f
+#
+# AWS 자격 증명은 넣지 않음. 컨테이너는 EC2 역할(인스턴스 메타데이터)을 그대로 씀.
+services:
+  app:
+    image: ${DOCKERHUB_USER:-<dockerhub_id>}/file-service:${APP_IMAGE_TAG:-1.3.0}
+    container_name: file-service
+    restart: unless-stopped
+    ports:
+      - "80:8080"
+    env_file:
+      - .env

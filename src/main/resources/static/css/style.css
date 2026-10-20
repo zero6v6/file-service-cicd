@@ -1,0 +1,29 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; background: #f4f5f7; color: #222; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: #232f3e; color: #fff; }
+header h1 { margin: 0; font-size: 20px; }
+.status { font-size: 13px; background: #37475a; padding: 6px 10px; border-radius: 4px; font-family: monospace; }
+.status.s3 { background: #1d8102; }
+.status.local { background: #7a5c00; }
+main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+.card { background: #fff; border-radius: 6px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.card h2 { margin: 0 0 12px; font-size: 16px; }
+button { padding: 8px 14px; border: 0; border-radius: 4px; background: #ff9900; color: #111; font-weight: 600; cursor: pointer; }
+button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; background: #e5e7eb; margin-left: 8px; }
+button.danger { background: #d13212; color: #fff; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #e5e7eb; }
+th { color: #555; font-weight: 600; }
+.message { min-height: 20px; font-size: 13px; margin: 10px 0 0; }
+.message.error { color: #d13212; }
+.message.ok { color: #1d8102; }
+.hint { font-size: 12px; color: #666; margin: 12px 0 0; }
+a.link { color: #0972d3; text-decoration: none; margin-right: 8px; }
+
+/* 발급된 프리사인 URL 표시 */
+.url-box { margin-top: 14px; padding: 12px; border: 1px solid #c6e3ff; background: #f3f9ff; border-radius: 6px; }
+.url-title { margin: 0 0 8px; font-weight: 600; font-size: 14px; }
+.url-meta { width: auto; font-size: 13px; margin-bottom: 8px; }
+.url-meta th { text-align: left; padding-right: 12px; color: #555; font-weight: 500; }
+.url-text { width: 100%; font-family: monospace; font-size: 12px; box-sizing: border-box; margin-bottom: 8px; }
+a.link.ready { font-weight: 600; color: #1d8102; }

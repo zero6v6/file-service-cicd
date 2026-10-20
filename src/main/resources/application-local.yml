@@ -1,0 +1,33 @@
+# 내 PC. 파일은 디스크, 목록은 H2 메모리 DB, 캐시는 메모리, 이벤트는 로그. S3 · AWS 자격 증명 · MySQL · Redis 설치가 전혀 필요 없음.
+file:
+  local:
+    # Windows : C:/CE/98.data/uploads   macOS : /Users/<me>/CE/98.data/uploads
+    path: ./data/uploads
+
+spring:
+  datasource:
+    # 메모리 DB. 앱을 끄면 목록이 사라짐 (파일은 디스크에 남음)
+    url: jdbc:h2:mem:files;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  cache:
+    # Redis 없이 메모리 캐시. 동작(@Cacheable · @CacheEvict)은 같고 인스턴스끼리 공유만 안 됨
+    type: simple
+
+app:
+  registry:
+    kind: h2
+
+logging:
+  level:
+    com.example.file: debug
+
+management:
+  endpoint:
+    health:
+      show-details: always

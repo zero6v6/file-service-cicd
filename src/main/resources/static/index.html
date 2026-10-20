@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>file-service</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>file-service</h1>
+    <div id="status" class="status">상태 확인 중</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>업로드</h2>
+      <form id="upload-form">
+        <input type="file" id="file" name="file" required>
+        <label><input type="checkbox" id="direct"> S3 로 직접 올리기 (프리사인 PUT)</label>
+        <button type="submit">업로드</button>
+      </form>
+      <p id="message" class="message"></p>
+    </section>
+
+    <section class="card">
+      <h2>파일 목록 <button id="refresh" class="small">새로 고침</button></h2>
+      <table>
+        <thead>
+          <tr><th>이름</th><th>크기</th><th>올린 시각</th><th>받기</th><th></th></tr>
+        </thead>
+        <tbody id="files"></tbody>
+      </table>
+      <p class="hint">
+        "앱 경유" 는 서버가 파일을 읽어 전달함. "직접(URL)" 은 클릭하면 S3 임시 주소를 발급해 아래에 보여 주고, 링크가 "S3 에서 받기" 로 바뀜 — 다시 클릭하면 브라우저가 S3 에서 직접 받음(S3 저장소일 때만 동작).
+      </p>
+    </section>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

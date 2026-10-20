@@ -1,0 +1,22 @@
+# 테스트 전용. main 의 application-local.yml 을 가리므로 테스트에 필요한 값을 여기에 다시 적음
+file:
+  local:
+    # 업로드 경로를 build 아래로 돌려 작업 폴더를 더럽히지 않음
+    path: ./build/test-uploads
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:files;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  cache:
+    # 테스트도 메모리 캐시. Redis 를 찾지 않음
+    type: simple
+
+app:
+  registry:
+    kind: h2

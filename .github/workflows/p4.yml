@@ -1,0 +1,24 @@
+name: p4-순서
+on:
+  push:
+    paths:
+      - .github/workflows/p4.yml
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo "검사 중"
+          sleep 5
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo "빌드 중"
+          sleep 10
+  report:
+    needs: [check, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "보고서 작성"

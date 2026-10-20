@@ -10,3 +10,11 @@ jobs:
     steps:
       - name: 인사
         run: echo "첫 워크플로 실행 성공"
+        # TODO [1-1] 러너의 커널 정보와 CPU 개수를 출력하는 스텝을 추가합니다.
+      - name: 러너 정보
+        run: |
+          uname -a
+          nproc
+        # TODO [1-2] 현재 작업 폴더의 파일 목록을 출력하는 스텝을 추가합니다.
+      - name: 받기 전 폴더 목록
+        run: ls -la

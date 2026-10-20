@@ -24,7 +24,7 @@ jobs:
     # TODO [1-4] JDK 21을 설치합니다. 배포판은 temurin입니다.
       - uses: actions/setup-java@v6
         with:
-          distribution: trmurin
+          distribution: temurin
           java-version: '21'
 
     # TODO [1-5] gradlew에 실행 권한을 주고 테스트를 실행합니다.

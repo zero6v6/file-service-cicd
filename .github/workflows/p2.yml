@@ -1,14 +1,25 @@
+name: p2-환경변수
+on:
+  push:
+    paths:
+      - .github/workflows/p2.yml
+  workflow_dispatch:
 env:
-
+  STAGE: workflow
 jobs:
-  basics:
+  no-job-env:
     runs-on: ubuntu-24.04
-    # 이 잡에서만 쓰는 환경 변수
-
-
-jobs:
-  basics:
+    steps:
+      - name: 워크플로 층만 있음
+        run: echo "STAGE=$STAGE"
+  with-job-env:
     runs-on: ubuntu-24.04
-    # 이 잡에서만 쓰는 환경 변수
     env:
-      JOB_NAME: basics
+      STAGE: job
+    steps:
+      - name: 잡 층까지 있음
+        run: echo "STAGE=$STAGE"
+      - name: 스텝 층까지 있음
+        env:
+          STAGE: step
+        run: echo "STAGE=$STAGE"

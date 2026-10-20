@@ -36,3 +36,10 @@ jobs:
 
     # TODO [1-6] 테스트가 실패했을 때만 테스트 보고서를 아티팩트로 올립니다.
     #            보고서 경로는 build/reports/tests/test 이고, 보관 기간은 7일입니다.
+      - name: 테스트 보고서
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: build/reports/tests/test
+          retention-days: 7

@@ -1,0 +1,85 @@
+# CD (1) — main 에 들어온 코드를 테스트 → 이미지(GHCR) → EC2 한 대에 SSH 로 배포
+name: deploy-ec2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 배포는 겹치면 안 됨 — 앞의 배포가 끝날 때까지 기다림(취소하지 않음)
+concurrency:
+  group: deploy-ec2
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # 테스트는 재사용 워크플로를 불러 씀 (ci.yml 은 PR 관문 검사 이름 test 를 지키려고 그대로 둠)
+  test:
+    uses: ./.github/workflows/_test.yml
+
+  build:
+    needs: test
+    runs-on: ubuntu-24.04
+    # 이 잡만 GHCR 에 쓸 수 있게 권한을 올림
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.name.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # GHCR 경로는 소문자만 — 아이디에 대문자가 있어도 되게 바꿈 · 태그는 커밋 앞 7자리
+      - id: name
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "image=ghcr.io/${owner}/file-service:${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # GITHUB_TOKEN 으로 로그인 — 따로 만든 비밀번호 없음
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.name.outputs.image }}
+          # 이미지와 저장소를 이어 줌 (GHCR 패키지 화면에 저장소가 표시됨)
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      # 서버에 들어가서 이미지 이름만 바꾸고 다시 띄움
+      # 서드파티 액션은 커밋 SHA 로 고정 (태그는 옮겨질 수 있음) · 주석에 버전
+      - uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/file-service
+            sed -i "s|^APP_IMAGE=.*|APP_IMAGE=${{ needs.build.outputs.image }}|" .env
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
+
+      # 배포 뒤 확인 — 2분 안에 health 가 UP 이 아니면 이 잡을 실패로
+      - name: 배포 확인
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS "http://${{ vars.EC2_HOST }}/actuator/health"; then exit 0; fi
+            sleep 6
+          done
+          echo "health 확인 실패" && exit 1

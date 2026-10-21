@@ -1,9 +1,7 @@
-# CI — push · PR 마다 테스트. 깨진 코드가 main 에 들어가기 전에 빨간불로 막음
+# CI — PR 마다 테스트. main 에 들어오기 전 관문 (main 의 push 는 deploy 워크플로가 다시 테스트)
 name: ci
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:

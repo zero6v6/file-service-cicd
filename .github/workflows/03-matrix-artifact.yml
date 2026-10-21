@@ -1,0 +1,61 @@
+# 문법 연습 ③ — 매트릭스(조합마다 잡 하나) · 아티팩트(잡 사이 파일 넘기기)
+name: 03-matrix-artifact
+
+on:
+  push:
+    paths: ['.github/workflows/03-matrix-artifact.yml']
+  pull_request:
+    paths: ['.github/workflows/03-matrix-artifact.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # 러너 두 종류(amd64 · arm64)에서 같은 jar 를 만들어 봄 — 조합마다 잡이 하나씩 동시에
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: jar 만들기 (테스트 제외)
+        run: chmod +x gradlew && ./gradlew bootJar -x test --no-daemon
+
+      - name: 결과 기록
+        run: |
+          mkdir -p out
+          {
+            echo "runner = ${{ matrix.runner }} ($(uname -m))"
+            ls -l build/libs/*.jar
+          } > "out/${{ matrix.runner }}.txt"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: result-${{ matrix.runner }}
+          path: out/
+          retention-days: 1
+
+  collect:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      # 다른 러너들이 올린 파일을 이 러너로 받아 옴
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: result-*
+          merge-multiple: true
+          path: all/
+
+      - name: 모아서 보기
+        run: |
+          ls -l all/
+          cat all/*.txt

@@ -1,0 +1,89 @@
+# CD (2) — 키 없이(OIDC) AWS 에 들어가 ECR 에 이미지를 올리고 ECS 서비스를 새 태스크 정의로 바꿈
+name: deploy-ecs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ecs
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+# 비밀이 아닌 설정값은 Actions 변수(vars)에서 — 저장소 Settings > Secrets and variables > Actions > Variables
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  TASK_FAMILY: ${{ vars.TASK_FAMILY }}
+  CONTAINER_NAME: file-service
+
+jobs:
+  # 테스트는 재사용 워크플로를 불러 씀 (ci.yml 은 PR 관문 검사 이름 test 를 지키려고 그대로 둠)
+  test:
+    uses: ./.github/workflows/_test.yml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # OIDC 토큰을 받으려면 id-token: write 가 필요함 (이 잡에서만)
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # GitHub 가 준 OIDC 토큰을 AWS STS 에 내고 역할의 임시 자격 증명을 받음 — 저장소에 키 없음
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 방금 받은 임시 자격 증명으로 ECR 에 docker login
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 태그 = 커밋 앞 7자리. 저장소가 Immutable 이라 같은 태그는 다시 못 올림 → 이미 있으면 건너뜀(다시 실행 대비)
+      - name: 이미지 빌드 · ECR push
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          tag="${GITHUB_SHA::7}"
+          image="${REGISTRY}/${ECR_REPOSITORY}:${tag}"
+          if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$tag" >/dev/null 2>&1; then
+            echo "이미 있음 — push 건너뜀 : $image"
+          else
+            docker build -t "$image" .
+            docker push "$image"
+          fi
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      # 태스크 정의는 저장소 파일이 아니라 AWS 에 등록된 최신 리비전을 기준으로 받음
+      # — 공개 저장소에 계정 ID · 비밀 ARN · DB/캐시 주소를 올리지 않기 위함
+      - name: 현재 태스크 정의 받기
+        run: |
+          aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
+            --query taskDefinition --output json > taskdef.json
+          echo "지금 이미지 : $(jq -r '.containerDefinitions[0].image' taskdef.json)"
+
+      # 받은 JSON 에서 컨테이너 이미지 한 줄만 새 이미지로 바꾼 사본을 만듦
+      - id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: taskdef.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.image.outputs.image }}
+
+      # 새 태스크 정의 등록 → 서비스 갱신 → 새 태스크가 healthy 가 될 때까지 기다림
+      - uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true

@@ -1,4 +1,4 @@
-# CD (2) — 키 없이(OIDC) AWS 에 들어가 ECR 에 이미지를 올리고 ECS 서비스를 새 태스크 정의로 바꿈
+# CD (2) — 키 없이(OIDC) AWS 에 들어가 ECR 에 이미지를 올리고 ECS 서비스를 새 태스크 정의로 바꿈 (블루/그린 : 롤백 감지 추가)
 name: deploy-ecs
 
 on:
@@ -81,9 +81,25 @@ jobs:
           image: ${{ steps.image.outputs.image }}
 
       # 새 태스크 정의 등록 → 서비스 갱신 → 새 태스크가 healthy 가 될 때까지 기다림
-      - uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      - id: deploy
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render.outputs.task-definition }}
           cluster: ${{ env.ECS_CLUSTER }}
           service: ${{ env.ECS_SERVICE }}
           wait-for-service-stability: true
+
+      # 블루/그린 · 서킷 브레이커는 실패하면 스스로 되돌림 → 서비스가 '안정' 이어도 새 리비전이 아닐 수 있음
+      # 지금 서비스가 쓰는 리비전 = 방금 등록한 리비전인지 확인하고, 아니면 이 잡을 빨간불로
+      - name: 배포 결과 확인
+        env:
+          NEW_TD: ${{ steps.deploy.outputs.task-definition-arn }}
+        run: |
+          now=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+                --query 'services[0].taskDefinition' --output text)
+          echo "새 리비전 : $NEW_TD"
+          echo "서비스    : $now"
+          if [ "$now" != "$NEW_TD" ]; then
+            echo "서비스가 새 리비전이 아님 — 배포가 되돌려짐(롤백)"
+            exit 1
+          fi
